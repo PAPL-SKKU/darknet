@@ -18,6 +18,9 @@ extern int gpu_index;
     #ifdef CUDNN
     #include "cudnn.h"
     #endif
+    #ifdef OPENDNN
+    #include "opendnn.h"
+    #endif
 #endif
 
 #ifndef __cplusplus
@@ -315,6 +318,10 @@ struct layer{
     size_t workspace_size;
 
 #ifdef GPU
+    cublasHandle_t handle;
+#ifdef OPENDNN
+    opendnnHandle_t opendnn_handle;
+#endif
     int *indexes_gpu;
 
     float *z_gpu;
@@ -400,6 +407,15 @@ struct layer{
     cudnnConvolutionBwdDataAlgo_t bd_algo;
     cudnnConvolutionBwdFilterAlgo_t bf_algo;
 #endif
+#ifdef OPENDNN
+    opendnnTensorDescriptor_t srcTensorDesc, dstTensorDesc;
+    opendnnTensorDescriptor_t dsrcTensorDesc, ddstTensorDesc;
+    opendnnTensorDescriptor_t normTensorDesc;
+    opendnnFilterDescriptor_t weightDesc;
+    opendnnFilterDescriptor_t dweightDesc;
+    opendnnConvolutionDescriptor_t convDesc;
+#endif
+
 #endif
 };
 

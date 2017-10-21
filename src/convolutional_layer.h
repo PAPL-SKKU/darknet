@@ -23,6 +23,9 @@ void adam_update_gpu(float *w, float *d, float *m, float *v, float B1, float B2,
 #ifdef CUDNN
 void cudnn_convolutional_setup(layer *l);
 #endif
+#ifdef OPENDNN
+void opendnn_convolutional_setup(layer *l);
+#endif
 #endif
 
 convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int n, int groups, int size, int stride, int padding, ACTIVATION activation, int batch_normalize, int binary, int xnor, int adam);

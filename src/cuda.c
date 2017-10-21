@@ -5,6 +5,9 @@ int gpu_index = 0;
 #include "cuda.h"
 #include "utils.h"
 #include "blas.h"
+#ifdef OPENDNN
+#include "opendnn.h"
+#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <time.h>
@@ -72,6 +75,19 @@ cudnnHandle_t cudnn_handle()
         init[i] = 1;
     }
     return handle[i];
+}
+#endif
+
+#ifdef OPENDNN
+opendnnHandle_t opendnn_handle()
+{
+    static int init = 0;
+    static opendnnHandle_t handle;
+    if(!init) {
+        opendnnCreate(&handle);
+        init = 1;
+    }
+    return handle;
 }
 #endif
 

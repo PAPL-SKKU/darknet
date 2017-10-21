@@ -1,8 +1,10 @@
 #include "cuda_runtime.h"
 #include "curand.h"
 #include "cublas_v2.h"
+#include "timer.hpp"
 
 extern "C" {
+#include "opendnn.h"
 #include "convolutional_layer.h"
 #include "batchnorm_layer.h"
 #include "gemm.h"
@@ -100,12 +102,26 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network net)
                 &one,
                 l.dstTensorDesc,
                 l.output_gpu);
-
+#endif
+#ifdef OPENDNN
+    Timer timer;
+    timer.Start();
+    opendnnConvolutionForward(l.opendnn_handle,
+                l.srcTensorDesc,
+                net.input_gpu,
+                l.weightDesc,
+                l.weights,
+                l.convDesc,
+                l.dstTensorDesc,
+                l.output_gpu);
+    timer.Stop();
+    printf("%lf\n", timer.MilliSeconds());
 #else
     int i, j;
     int m = l.n/l.groups;
     int k = l.size*l.size*l.c/l.groups;
     int n = l.out_w*l.out_h;
+
     for(i = 0; i < l.batch; ++i){
         for(j = 0; j < l.groups; ++j){
             float *a = l.weights_gpu + j*l.nweights/l.groups;
@@ -114,7 +130,7 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network net)
 
             im2col_gpu(net.input_gpu + (i*l.groups + j)*l.c/l.groups*l.h*l.w,
                 l.c/l.groups, l.h, l.w, l.size, l.stride, l.pad, b);
-            gemm_gpu(0,0,m,n,k,1,a,k,b,n,1,c,n);
+            gemm_gpu_w_handle(l.handle, 0,0,m,n,k,1,a,k,b,n,1,c,n);
         }
     }
 #endif

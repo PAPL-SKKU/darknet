@@ -1,9 +1,11 @@
+#include "opendnn.h"
 #include "convolutional_layer.h"
 #include "utils.h"
 #include "batchnorm_layer.h"
 #include "im2col.h"
 #include "col2im.h"
 #include "blas.h"
+#include "cuda.h"
 #include "gemm.h"
 #include <stdio.h>
 #include <time.h>
@@ -171,6 +173,23 @@ void cudnn_convolutional_setup(layer *l)
             &l->bf_algo);
 }
 #endif
+#ifdef OPENDNN
+void opendnn_convolutional_setup(layer *l)
+{
+    opendnnSetTensor4dDescriptor(l->dsrcTensorDesc, l->batch, l->c, l->h, l->w); 
+    opendnnSetTensor4dDescriptor(l->ddstTensorDesc, l->batch, l->out_c, l->out_h, l->out_w); 
+
+    opendnnSetTensor4dDescriptor(l->srcTensorDesc, l->batch, l->c, l->h, l->w); 
+    opendnnSetTensor4dDescriptor(l->dstTensorDesc, l->batch, l->out_c, l->out_h, l->out_w); 
+    opendnnSetTensor4dDescriptor(l->normTensorDesc, 1, l->out_c, 1, 1); 
+
+    opendnnSetFilter4dDescriptor(l->dweightDesc, l->n, l->c/l->groups, l->size, l->size); 
+    opendnnSetFilter4dDescriptor(l->weightDesc, l->n, l->c/l->groups, l->size, l->size); 
+    opendnnSetConvolution2dDescriptor(l->convDesc, l->pad, l->pad, l->stride, l->stride, 1, 1);
+
+    opendnnSetConvolutionGroupCount(l->convDesc, l->groups);
+}
+#endif
 #endif
 
 convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int n, int groups, int size, int stride, int padding, ACTIVATION activation, int batch_normalize, int binary, int xnor, int adam)
@@ -258,6 +277,10 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     }
 
 #ifdef GPU
+#ifdef OPENDNN
+    l.opendnn_handle = opendnn_handle();
+#endif
+    l.handle = blas_handle();
     l.forward_gpu = forward_convolutional_layer_gpu;
     l.backward_gpu = backward_convolutional_layer_gpu;
     l.update_gpu = update_convolutional_layer_gpu;
@@ -315,6 +338,17 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
         cudnnCreateFilterDescriptor(&l.dweightDesc);
         cudnnCreateConvolutionDescriptor(&l.convDesc);
         cudnn_convolutional_setup(&l);
+#endif
+#ifdef OPENDNN
+        opendnnCreateTensorDescriptor(&l.normTensorDesc);
+        opendnnCreateTensorDescriptor(&l.srcTensorDesc);
+        opendnnCreateTensorDescriptor(&l.dstTensorDesc);
+        opendnnCreateFilterDescriptor(&l.weightDesc);
+        opendnnCreateTensorDescriptor(&l.dsrcTensorDesc);
+        opendnnCreateTensorDescriptor(&l.ddstTensorDesc);
+        opendnnCreateFilterDescriptor(&l.dweightDesc);
+        opendnnCreateConvolutionDescriptor(&l.convDesc);
+        opendnn_convolutional_setup(&l);
 #endif
     }
 #endif
@@ -402,6 +436,9 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
     }
 #ifdef CUDNN
     cudnn_convolutional_setup(l);
+#endif
+#ifdef OPENDNN
+    opendnn_convolutional_setup(l);
 #endif
 #endif
     l->workspace_size = get_workspace_size(*l);
