@@ -72,7 +72,7 @@ if (level > loglevel) ; \
 else logIt(level)
 
 #ifdef __DEBUG_ON__
-loglevel_e loglevel = DEBUG;
+loglevel_e loglevel = INFO;
 #else
 loglevel_e loglevel = ERROR;
 #endif

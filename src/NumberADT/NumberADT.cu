@@ -406,9 +406,11 @@ CUDA_HOSTDEV float Number::operator*(const float rhs) const{
       else if (_bwTotal == 9) return mul_exp<9>(buf_exp9, rhs);
       else if (_bwTotal == 16) return mul_exp<16>(buf_exp, rhs);
       else {
-        /* LOG(ERROR) << "Number::operator*(), Not a valid bitwidth " */
-        /*            << __RED__ << _bwTotal << __END__; */
-        /* exit(-1); */
+        #ifndef __CUDA_ARCH__
+        LOG(ERROR) << "Number::operator*(), Not a valid bitwidth "
+                   << __RED__ << _bwTotal << __END__;
+        exit(-1);
+        #endif
       }
     case FIXED: 
       if (_bwTotal == 2) return mul_fixed<2>(buf_fixed2, rhs);
@@ -428,40 +430,52 @@ CUDA_HOSTDEV float Number::operator*(const float rhs) const{
       else if (_bwTotal == 16) return mul_fixed<16>(buf_fixed16, rhs);
       else if (_bwTotal == 32) return mul_fixed<32>(buf_fixed32, rhs);
       else{
-        // LOG(ERROR) << "Number::operator*(), Not a valid bitwidth "
-        //            << __RED__ << _bwTotal << __END__;
-        /* exit(-1); */
+        #ifndef __CUDA_ARCH__
+        LOG(ERROR) << "Number::operator*(), Not a valid bitwidth "
+                   << __RED__ << _bwTotal << __END__;
+        exit(-1);
+        #endif
       }
     case FLOAT: return mul_float(buf_float, rhs);
     case HALF: return mul_half(buf_half, rhs);
     default: break;
-//       LOG(ERROR) << "Number::operator*(), Invalid type for lhs";
-      /* exit(-1); */
+      #ifndef __CUDA_ARCH__
+      LOG(ERROR) << "Number::operator*(), Invalid type for lhs";
+      exit(-1);
+      #endif
   }
 }
 
 // This is just for testing
-void top_accel(float input[19], Number weight[10]){
-    for (int i=1; i<10; i++)
-       LOG(DEBUG) << weight[i] * input[i];
-    LOG(INFO) << 1;
+const int CNT = 20;
+void top_accel(float input[CNT], Number weight[CNT], float fweight[CNT]){
+    LOG(DEBUG) << "EXP" << "   vs   " << "FLOAT";
+    for (int i=1; i<CNT; i++)
+       LOG(DEBUG) << weight[i] * input[i] << "\t" << fweight[i] * input[i];
+    for (int i=1; i<CNT; i++)
+       LOG(INFO) << weight[i].get_exp() << "\t" << fweight[i];
+    LOG(ERROR) << 1;
     LOG(WARNING) << 2;
-    LOG(ERROR) << 2;
-    LOG(DEBUG) << 2;
+    LOG(DEBUG) << 3;
+    LOG(INFO) << 4;
 }
 
 int main() {
-    float input[19];
-    Number *weight = (Number *) malloc(sizeof(Number)*10);
-    for (ptrdiff_t i=0; i<10; i++)
-        new (weight + i) Number(EXP, 3,0);
+    float input[CNT];
+    float fweight[CNT];;
+    Number *weight = (Number *) malloc(sizeof(Number)*CNT);
 
-    for (int i=1; i<10; i++){
-        weight[i] = (float)(0.0001245/i);
-        input[i] = (float)(0.03929/i);
+    for (ptrdiff_t i=0; i<CNT; i++)
+        new (weight + i) Number(EXP, 2,0);
+
+    for (int i=1; i<CNT; i++){
+        /* weight[i] = fweight[i] = (float)(0.0001245/i); */
+        /* input[i] = (float)(0.03929/i); */
+        weight[i] = fweight[i] = (float)(-2/powf(2,i));
+        input[i] = (float)(4/powf(2,i));
     }
 
-    top_accel(input, weight);
+    top_accel(input, weight, fweight);
 
     return 0;
 }

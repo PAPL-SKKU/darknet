@@ -66,9 +66,11 @@ CUDA_HOSTDEV float Number::operator*(const float rhs) const{
       else if (_bwTotal == 9) return mul_exp<9>(buf_exp9, rhs);
       else if (_bwTotal == 16) return mul_exp<16>(buf_exp, rhs);
       else {
+        #ifndef __CUDA_ARCH__
         /* LOG(ERROR) << "Number::operator*(), Not a valid bitwidth " */
         /*            << __RED__ << _bwTotal << __END__; */
-        /* exit(-1); */
+        exit(-1);
+        #endif
       }
     case FIXED: 
       if (_bwTotal == 2) return mul_fixed<2>(buf_fixed2, rhs);
@@ -88,15 +90,19 @@ CUDA_HOSTDEV float Number::operator*(const float rhs) const{
       else if (_bwTotal == 16) return mul_fixed<16>(buf_fixed16, rhs);
       else if (_bwTotal == 32) return mul_fixed<32>(buf_fixed32, rhs);
       else{
-        // LOG(ERROR) << "Number::operator*(), Not a valid bitwidth "
-        //            << __RED__ << _bwTotal << __END__;
-        /* exit(-1); */
+        #ifndef __CUDA_ARCH__
+        /* LOG(ERROR) << "Number::operator*(), Not a valid bitwidth " */
+        /*            << __RED__ << _bwTotal << __END__; */
+        exit(-1);
+        #endif
       }
     case FLOAT: return mul_float(buf_float, rhs);
     case HALF: return mul_half(buf_half, rhs);
-    default: break;
-//       LOG(ERROR) << "Number::operator*(), Invalid type for lhs";
-      /* exit(-1); */
+    default:
+      #ifndef __CUDA_ARCH__
+      /* LOG(ERROR) << "Number::operator*(), Invalid type for lhs"; */
+      exit(-1);
+      #endif
   }
 }
 
