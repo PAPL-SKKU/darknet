@@ -8,9 +8,9 @@
 #include <map>
 #include <iostream>
 
-#include "NumberADT/half.hpp"
-#include "NumberADT/log2.hpp"
-#include "NumberADT/fixed.hpp"
+#include "half.hpp"
+#include "log2.hpp"
+#include "fixed.hpp"
 
 // #ifdef __CUDACC__
 // #define CUDA_HOSTDEV __device__
@@ -45,11 +45,11 @@ public:
   void set(string name);
   void init(DataType type, int bwTotal, int bwInt=0);
   // CUDA_HOSTDEV Number& operator*(Number& rhs) const;
-  __device__ float operator*(const float rhs) const;
-  void operator=(const double rhs);
-  void operator=(const float rhs);
-  void operator=(const int rhs);
-  Number& operator=(const Number& rhs);
+  CUDA_HOSTDEV float operator*(const float rhs) const;
+  // CUDA_HOSTDEV void operator=(const double rhs);
+  CUDA_HOSTDEV void operator=(const float rhs);
+  CUDA_HOSTDEV void operator=(const int rhs);
+  CUDA_HOSTDEV Number& operator=(const Number& rhs);
 
   // Packs information into a single class (TypeInfo)
   class TypeInfo {
@@ -61,6 +61,11 @@ public:
       _bwInt = bwInt;
     }
     friend class Number;
+    void print(){
+      cout << "Type: " << _type << endl
+           << "BW (total): " << _bwTotal << endl
+           << "BW (int): " << _bwInt << endl;
+    }
   private:
     DataType _type;
     int _bwTotal;

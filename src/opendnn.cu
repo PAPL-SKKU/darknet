@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
-#include "NumberADT/Number.hpp"
+#include "NumberADT/NumberADT.hpp"
 extern "C" {
 #include "opendnn.h"
 }

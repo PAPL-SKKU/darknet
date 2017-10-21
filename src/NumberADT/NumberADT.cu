@@ -7,7 +7,7 @@
 #include <vector>
 #include <string.h>
 #include "debug.hpp"
-#include "Number.hpp"
+#include "NumberADT.hpp"
 
 // static config variable
 map<string,Number::TypeInfo> Number::cfg;
@@ -54,7 +54,7 @@ void Number::init(DataType type, int bwTotal, int bwInt){
 
   _type = type; 
   if(type == FIXED){
-    _bwTotal = pow(2,bwTotal) + __BW_OFF__;
+    _bwTotal = pow(2,bwTotal);
   }
   else{
     _bwTotal = pow(2,bwTotal);
@@ -76,7 +76,7 @@ Number::Number(const float value, DataType type, int bwTotal, int bwInt) {
  
   _type = type; 
   if(type == FIXED){
-    _bwTotal = bwTotal + __BW_OFF__;
+    _bwTotal = bwTotal;
   }
   else{
     _bwTotal = bwTotal;
@@ -119,7 +119,7 @@ Number::Number(const float value, DataType type, int bwTotal, int bwInt) {
   // return (fixedp<32, __MAX_IW__>)data;
 // }
 
-void Number::operator=(float rhs){
+CUDA_HOSTDEV void Number::operator=(float rhs){
   switch (_type){
     case EXP:
       if (_bwTotal == 2) buf_exp2 = rhs;
@@ -132,9 +132,9 @@ void Number::operator=(float rhs){
       else if (_bwTotal == 9) buf_exp9 = rhs;
       else if (_bwTotal == 16) buf_exp = rhs;
       else {
-        LOG(ERROR) << "Number::operator=(), Not a valid EXP bitwidth "
-                   << __RED__ << _bwTotal << __END__;
-        exit(-1);
+        /* LOG(ERROR) << "Number::operator=(float), Not a valid EXP bitwidth " */
+        /*            << __RED__ << _bwTotal << __END__; */
+        /* exit(-1); */
       }
     break;
     case FIXED: 
@@ -155,42 +155,46 @@ void Number::operator=(float rhs){
       else if (_bwTotal == 16) buf_fixed16 = rhs; 
       else if (_bwTotal == 32) buf_fixed32 = rhs; 
       else{
-          LOG(ERROR) << "Number::operator=(), Not a valid FIXED bitwidth "
-                     << __RED__ << _bwTotal << __END__;
-          exit(-1);
+          /* LOG(ERROR) << "Number::operator=(float), Not a valid FIXED bitwidth " */
+          /*            << __RED__ << _bwTotal << __END__; */
+          /* exit(-1); */
       }
       break;
     case FLOAT: buf_float = (float_t) rhs; break;
     case HALF: buf_half = rhs; break;
     default:
-      LOG(ERROR) << "Number::operator*(), Invalid type for lhs";
-      exit(-1);
+      /* LOG(ERROR) << "Number::operator=(float), Invalid type for lhs"; */
+      /* exit(-1); */
+      break;
   }
 }
 
 // TODO: Wrong type conversion, currently just forced, value must be treated
-void Number::operator=(const int rhs){
+CUDA_HOSTDEV void Number::operator=(const int rhs){
   switch (_type){
     case EXP  : buf_exp   = (float)rhs; break;
     case FIXED: buf_fixed = (float)rhs; break;
     case FLOAT: buf_float = (float_t) rhs; break;
     case HALF: buf_half = (float)rhs; break;
     default:
-      exit(-1);
+      /* LOG(ERROR) << "Number::operator=(int), Invalid type for lhs"; */
+      /* exit(-1); */
+      break;
   }
 }
 
 
 // TODO: Is it necessaray to support all those 9 combinations?
-Number& Number::operator=(const Number& rhs){
+CUDA_HOSTDEV Number& Number::operator=(const Number& rhs){
   switch (_type){
     case EXP  : buf_exp   = rhs.buf_exp; break;
     case FIXED: buf_fixed = rhs.buf_fixed; break;
     case FLOAT: buf_float = rhs.buf_float; break;
     case HALF:  buf_half = rhs.buf_half; break;
     default:
-      LOG(ERROR) << "Number::operator*(), Invalid type for lhs";
-      exit(-1);
+      /* LOG(ERROR) << "Number::operator=(Number), Invalid type for lhs"; */
+      /* exit(-1); */
+      break;
   }
 }
 
@@ -345,4 +349,121 @@ ostream& operator<<(ostream& os, Number& num) {
   return os;
 }
 
+#ifdef __MAIN_TEST__
+
+CUDA_HOSTDEV float mul_float(float_t lhs, float rhs){
+  return lhs * rhs;
+}
+
+CUDA_HOSTDEV float mul_half(sixteen<1> lhs, float rhs){  
+  return lhs * rhs;//__float2half(__half2float(lhs) * rhs);
+}
+
+
+template <unsigned int BW>
+CUDA_HOSTDEV float mul_exp(log2quant<BW> lhs, float rhs_native){
+//   const unsigned int BIAS = exp2f((float)BW-2) - 1;
+//   const unsigned int EXP_MAX = exp2f((float)BW-1) - 1;
+//
+//   ap_uint<32> rhs = *(reinterpret_cast<unsigned int*>(&rhs_native));
+//
+//   ap_uint<1> lhs_sign = lhs[BW-1]; // sign from exp_t
+//   ap_uint<1> rhs_sign = rhs[31];   // sign from float
+//
+//   ap_uint<BWOpr> lhs_exp = lhs.range(BW-2,0);  // exp from uint
+//   ap_uint<BWOpr> rhs_exp = rhs.range(30,23);   // exp from float
+//
+//   ap_uint<BWOpr> exp = lhs_exp + rhs_exp;  // multiply of exp
+//
+//   // Underflow check with re-adjusting bias
+//   if (exp > BIAS) { exp -= BIAS; }
+//   else { exp = 0; }
+//
+//   // Output is float, thus exp can be remained as 8bit
+//   rhs = (lhs_sign ^ rhs_sign, exp.range(7,0), rhs.range(22,0)); 
+//
+//   unsigned int result = rhs; // unavoidable type cast to native
+//
+//   return *(reinterpret_cast<float*>(&result));
+    return lhs * rhs_native;
+}
+
+template <unsigned int BW>
+CUDA_HOSTDEV float mul_fixed(fixedp<BW, __MAX_IW__> lhs, float rhs){
+  return lhs * rhs;
+}
+
+CUDA_HOSTDEV float Number::operator*(const float rhs) const{
+  switch (_type){
+    case EXP:
+      if (_bwTotal == 2) return mul_exp<2>(buf_exp2, rhs);
+      else if (_bwTotal == 3) return mul_exp<3>(buf_exp3, rhs);
+      else if (_bwTotal == 4) return mul_exp<4>(buf_exp4, rhs);
+      else if (_bwTotal == 5) return mul_exp<5>(buf_exp5, rhs);
+      else if (_bwTotal == 6) return mul_exp<6>(buf_exp6, rhs);
+      else if (_bwTotal == 7) return mul_exp<7>(buf_exp7, rhs);
+      else if (_bwTotal == 8) return mul_exp<8>(buf_exp8, rhs);
+      else if (_bwTotal == 9) return mul_exp<9>(buf_exp9, rhs);
+      else if (_bwTotal == 16) return mul_exp<16>(buf_exp, rhs);
+      else {
+        /* LOG(ERROR) << "Number::operator*(), Not a valid bitwidth " */
+        /*            << __RED__ << _bwTotal << __END__; */
+        /* exit(-1); */
+      }
+    case FIXED: 
+      if (_bwTotal == 2) return mul_fixed<2>(buf_fixed2, rhs);
+      else if (_bwTotal == 3) return mul_fixed<3>(buf_fixed3, rhs);
+      else if (_bwTotal == 4) return mul_fixed<4>(buf_fixed4, rhs);
+      else if (_bwTotal == 5) return mul_fixed<5>(buf_fixed5, rhs);
+      else if (_bwTotal == 6) return mul_fixed<6>(buf_fixed6, rhs);
+      else if (_bwTotal == 7) return mul_fixed<7>(buf_fixed7, rhs);
+      else if (_bwTotal == 8) return mul_fixed<8>(buf_fixed8, rhs);
+      else if (_bwTotal == 9) return mul_fixed<9>(buf_fixed9, rhs);
+      else if (_bwTotal == 10) return mul_fixed<10>(buf_fixed10, rhs);
+      else if (_bwTotal == 11) return mul_fixed<11>(buf_fixed11, rhs);
+      else if (_bwTotal == 12) return mul_fixed<12>(buf_fixed12, rhs);
+      else if (_bwTotal == 13) return mul_fixed<13>(buf_fixed13, rhs);
+      else if (_bwTotal == 14) return mul_fixed<14>(buf_fixed14, rhs);
+      else if (_bwTotal == 15) return mul_fixed<15>(buf_fixed15, rhs);
+      else if (_bwTotal == 16) return mul_fixed<16>(buf_fixed16, rhs);
+      else if (_bwTotal == 32) return mul_fixed<32>(buf_fixed32, rhs);
+      else{
+        // LOG(ERROR) << "Number::operator*(), Not a valid bitwidth "
+        //            << __RED__ << _bwTotal << __END__;
+        /* exit(-1); */
+      }
+    case FLOAT: return mul_float(buf_float, rhs);
+    case HALF: return mul_half(buf_half, rhs);
+    default: break;
+//       LOG(ERROR) << "Number::operator*(), Invalid type for lhs";
+      /* exit(-1); */
+  }
+}
+
+// This is just for testing
+void top_accel(float input[19], Number weight[10]){
+    for (int i=1; i<10; i++)
+       LOG(DEBUG) << weight[i] * input[i];
+    LOG(INFO) << 1;
+    LOG(WARNING) << 2;
+    LOG(ERROR) << 2;
+    LOG(DEBUG) << 2;
+}
+
+int main() {
+    float input[19];
+    Number *weight = (Number *) malloc(sizeof(Number)*10);
+    for (ptrdiff_t i=0; i<10; i++)
+        new (weight + i) Number(EXP, 3,0);
+
+    for (int i=1; i<10; i++){
+        weight[i] = (float)(0.0001245/i);
+        input[i] = (float)(0.03929/i);
+    }
+
+    top_accel(input, weight);
+
+    return 0;
+}
+#endif
 #endif

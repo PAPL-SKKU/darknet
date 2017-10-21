@@ -5,23 +5,23 @@ extern "C" {
 }
 #include <string>
 #include <sstream>
-#include "NumberADT/Number.hpp"
+#include "NumberADT/NumberADT.hpp"
 
 
-// Extracted from NumberADT/Number.cu
-// 
+// Copied from NumberADT/NumberADT.cu
+// ===================================================================
 
-__device__ float mul_float(float_t lhs, float rhs){
+CUDA_HOSTDEV float mul_float(float_t lhs, float rhs){
   return lhs * rhs;
 }
 
-__device__ float mul_half(sixteen<1> lhs, float rhs){  
+CUDA_HOSTDEV float mul_half(sixteen<1> lhs, float rhs){  
   return lhs * rhs;//__float2half(__half2float(lhs) * rhs);
 }
 
 
 template <unsigned int BW>
-__device__ float mul_exp(log2quant<BW> lhs, float rhs_native){
+CUDA_HOSTDEV float mul_exp(log2quant<BW> lhs, float rhs_native){
 //   const unsigned int BIAS = exp2f((float)BW-2) - 1;
 //   const unsigned int EXP_MAX = exp2f((float)BW-1) - 1;
 //
@@ -49,11 +49,11 @@ __device__ float mul_exp(log2quant<BW> lhs, float rhs_native){
 }
 
 template <unsigned int BW>
-__device__ float mul_fixed(fixedp<BW, __MAX_IW__> lhs, float rhs){
+CUDA_HOSTDEV float mul_fixed(fixedp<BW, __MAX_IW__> lhs, float rhs){
   return lhs * rhs;
 }
 
-__device__ float Number::operator*(const float rhs) const{
+CUDA_HOSTDEV float Number::operator*(const float rhs) const{
   switch (_type){
     case EXP:
       if (_bwTotal == 2) return mul_exp<2>(buf_exp2, rhs);
@@ -100,6 +100,7 @@ __device__ float Number::operator*(const float rhs) const{
   }
 }
 
+// ===================================================================
 
 __global__ void parallelConv(int fil_h, int fil_w, int fil_in,
                             int str_h, int str_v, int pad_h, int pad_w,
