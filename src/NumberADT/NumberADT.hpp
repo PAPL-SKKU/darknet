@@ -1,24 +1,24 @@
-#ifndef NUMBER_H
-#define NUMBER_H
+#ifndef NUMBER_H_
+#define NUMBER_H_
 
 #define __BW_OFF__ 0
 #define __MAX_IW__ 0
 
 #include <string>
 #include <map>
-#include <iostream>
 
-#include "half.hpp"
 #include "log2.hpp"
 #include "fixed.hpp"
+#include "half.hpp"
 
-// #ifdef __CUDACC__
-// #define CUDA_HOSTDEV __device__
-// #else
-// #define CUDA_HOSTDEV
-// #endif
+#ifdef __CUDACC__
+#define CUDA_HOSTDEV __host__ __device__
+#else
+#define CUDA_HOSTDEV
+#endif
 
 using namespace std;
+
 
 enum DataType {
   EXP,
@@ -38,18 +38,18 @@ typedef short exp_t;
 // Number type
 class Number {
 public:
-  Number();
-  Number(string name); // FLOAT
-  Number(const float value, DataType type, int bwTotal, int bwInt=0); // FLOAT
-  Number(DataType type, int bwTotal, int bwInt=0);
-  void set(string name);
-  void init(DataType type, int bwTotal, int bwInt=0);
-  // CUDA_HOSTDEV Number& operator*(Number& rhs) const;
-  CUDA_HOSTDEV float operator*(const float rhs) const;
-  // CUDA_HOSTDEV void operator=(const double rhs);
+  CUDA_HOSTDEV Number(){};
+  CUDA_HOSTDEV Number(string name); // FLOAT
+  CUDA_HOSTDEV Number(const float value, DataType type, int bwTotal, int bwInt=0); // FLOAT
+  CUDA_HOSTDEV Number(DataType type, int bwTotal, int bwInt=0);
+  CUDA_HOSTDEV void set(string name);
+  CUDA_HOSTDEV void init(DataType type, int bwTotal, int bwInt=0);
+  CUDA_HOSTDEV Number& operator*(Number& rhs) const;
+  CUDA_HOSTDEV float operator*(float rhs);
+  CUDA_HOSTDEV void operator=(const double rhs);
   CUDA_HOSTDEV void operator=(const float rhs);
   CUDA_HOSTDEV void operator=(const int rhs);
-  CUDA_HOSTDEV Number& operator=(const Number& rhs);
+  CUDA_HOSTDEV void operator=(const Number& rhs);
 
   // Packs information into a single class (TypeInfo)
   class TypeInfo {
@@ -61,11 +61,6 @@ public:
       _bwInt = bwInt;
     }
     friend class Number;
-    void print(){
-      cout << "Type: " << _type << endl
-           << "BW (total): " << _bwTotal << endl
-           << "BW (int): " << _bwInt << endl;
-    }
   private:
     DataType _type;
     int _bwTotal;
@@ -75,6 +70,8 @@ public:
   // Configuration hash which holds <"conv1", TypeInfo(FLOAT, 32)> pair
   static map<string,TypeInfo> cfg;
   static void ParseConfigs(string filename);
+  // thrust::pair<string,TypeInfo> cfg;
+  // void ParseConfigs(string filename);
 
   // Getter
   DataType get_type(){return _type;}
@@ -92,22 +89,7 @@ private:
   float_t buf_float;
   sixteen<1> buf_half;
   fixedp<32, __MAX_IW__> buf_fixed;
-  // ap_fixed<2, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed2;
-  // ap_fixed<3, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed3;
-  // ap_fixed<4, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed4;
-  // ap_fixed<5, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed5;
-  // ap_fixed<6, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed6;
-  // ap_fixed<7, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed7;
-  // ap_fixed<8, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed8;
-  // ap_fixed<9, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed9;
-  // ap_fixed<10, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed10;
-  // ap_fixed<11, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed11;
-  // ap_fixed<12, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed12;
-  // ap_fixed<13, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed13;
-  // ap_fixed<14, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed14;
-  // ap_fixed<15, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed15;
-  // ap_fixed<16, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed16;
-  // ap_fixed<32, __MAX_IW__, AP_RND_CONV, AP_SAT> buf_fixed32;
+  fixedp<1, __MAX_IW__> buf_fixed1;
   fixedp<2, __MAX_IW__> buf_fixed2;
   fixedp<3, __MAX_IW__> buf_fixed3;
   fixedp<4, __MAX_IW__> buf_fixed4;
@@ -123,16 +105,24 @@ private:
   fixedp<14, __MAX_IW__> buf_fixed14;
   fixedp<15, __MAX_IW__> buf_fixed15;
   fixedp<16, __MAX_IW__> buf_fixed16;
+  fixedp<17, __MAX_IW__> buf_fixed17;
+  fixedp<18, __MAX_IW__> buf_fixed18;
+  fixedp<19, __MAX_IW__> buf_fixed19;
+  fixedp<20, __MAX_IW__> buf_fixed20;
+  fixedp<21, __MAX_IW__> buf_fixed21;
+  fixedp<22, __MAX_IW__> buf_fixed22;
+  fixedp<23, __MAX_IW__> buf_fixed23;
+  fixedp<24, __MAX_IW__> buf_fixed24;
+  fixedp<25, __MAX_IW__> buf_fixed25;
+  fixedp<26, __MAX_IW__> buf_fixed26;
+  fixedp<27, __MAX_IW__> buf_fixed27;
+  fixedp<28, __MAX_IW__> buf_fixed28;
+  fixedp<29, __MAX_IW__> buf_fixed29;
+  fixedp<30, __MAX_IW__> buf_fixed30;
+  fixedp<31, __MAX_IW__> buf_fixed31;
   fixedp<32, __MAX_IW__> buf_fixed32;
   log2quant<16> buf_exp;
-  // ap_uint<2> buf_exp2;
-  // ap_uint<3> buf_exp3;
-  // ap_uint<4> buf_exp4;
-  // ap_uint<5> buf_exp5;
-  // ap_uint<6> buf_exp6;
-  // ap_uint<7> buf_exp7;
-  // ap_uint<8> buf_exp8;
-  // ap_uint<9> buf_exp9;
+  log2quant<1> buf_exp1;
   log2quant<2> buf_exp2;
   log2quant<3> buf_exp3;
   log2quant<4> buf_exp4;
@@ -154,4 +144,5 @@ enum open_convolution_mode {
     CROSS_CORRELATION
 };
 
-#endif
+
+#endif // NUMBER_H_

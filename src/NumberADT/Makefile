@@ -1,18 +1,18 @@
 CXX:=nvcc
-CFLAGS:=-O3 -D__MAIN_TEST__ -D__DEBUG_ON__ -DOPENDNN
+CFLAGS:=-O3 -D__DEBUG_ON__ -DOPENDNN -D__TEST__
 LDFLAGS:=
 
 # OBJ must include a .cpp and .h with same name
-OBJ:=
-EXE:=NumberADT.exe
+OBJ:=NumberADT.o
+EXE:=test.exe
 
 all: $(EXE)
 
 # Rule for object files, each object must have a header
-$(OBJ): %.o: %.cu %.hpp
+$(OBJ): %.o: %.cpp %.hpp
 	$(CXX) -c $< -o $@ $(CFLAGS)
 
-%.o: %.cu
+%.o: %.cpp
 	$(CXX) -c $< -o $@ $(CFLAGS)
 
 # Rule for executables

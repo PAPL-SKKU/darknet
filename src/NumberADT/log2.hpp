@@ -1,5 +1,5 @@
-#ifndef NUMBER_LOG2_
-#define NUMBER_LOG2_
+#ifndef LOG_QUANT_
+#define LOG_QUANT_
 #include <math.h>
 #include <iostream>
 
@@ -28,35 +28,31 @@ private:
 template <int T>
 CUDA_HOSTDEV float log2quant<T>::operator*(float a) const {
     if (!a) return 0;
-    int data = _data << 23;
-    int temp = *reinterpret_cast<int*>(&a);
-    int mask = (1 << (T-1)) - 1;
+    int data = (_data + 128 - (1<<(T-2))) << 23;
+    unsigned int temp = *reinterpret_cast<int*>(&a);
     int sign = (temp >> 31) & 0x1;
-    int result = data + temp - (mask << 23);
+    int result = data + ((temp << 1) >> 1) - (127 << 23);
     return (*reinterpret_cast<float*>(&result)) * (1 - 2 * (_sign ^ sign));
 }
 
 template <int T>
 CUDA_HOSTDEV void log2quant<T>::operator=(float a) {
     unsigned int temp = *reinterpret_cast<unsigned int*>(&a);
-    int mask = (1 << (T-1)) - 1;
-    _data = ((temp << (9-T)) >> (32-T)) & mask;
+    _data = ((temp << 1) >> 24) + (1<<(T-2)) - 128;
     _sign = (temp >> 31) & 0x1;
 }
 
 template <int T>
 CUDA_HOSTDEV float log2quant<T>::getResult() {
-    int temp = _data << 23;
+    int temp = (_data - (1<<T-2) + 128) << 23;
     float result = (1 - 2 * _sign) * (*reinterpret_cast<float*>(&temp));
     return result;
 }
 
 template <int T>
 std::ostream& operator<<(std::ostream& os, log2quant<T>& a) {
-    int temp = a.getData()<<23;
-    float result = (*reinterpret_cast<float*>(&temp)) * (1 - 2 * a.getSign());
+    float result = a.getResult();
     os << result;
     return os;
 }
-
 #endif
