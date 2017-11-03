@@ -104,8 +104,8 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network net)
                 l.output_gpu);
 #endif
 #ifdef OPENDNN
-    Timer timer;
-    timer.Start();
+    // Timer timer;
+    // timer.Start();
     opendnnConvolutionForward(l.opendnn_handle,
                 l.srcTensorDesc,
                 net.input_gpu,
@@ -114,8 +114,8 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network net)
                 l.convDesc,
                 l.dstTensorDesc,
                 l.output_gpu);
-    timer.Stop();
-    printf("Here is Time: %lf\n", timer.MilliSeconds());
+    /* timer.Stop(); */
+    /* printf("Here is Time: %lf\n", timer.MilliSeconds()); */
 #else
     int i, j;
     int m = l.n/l.groups;
