@@ -1,8 +1,6 @@
 #ifndef openDNN_H_
 #define openDNN_H_
 
-#ifdef OPENDNN
-
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__
 #else
@@ -27,8 +25,6 @@ struct opendnnContext {
 };
 
 typedef struct opendnnContext* opendnnHandle_t;
-
-typedef float Dtype;
 
 // typedef enum {
 //     SIGMOID,
@@ -145,7 +141,7 @@ void opendnnGetNormDescriptor (opendnnNormDescriptor_t, int*, double*, double*, 
 
 // Softmax
 // TODO: Softmax is not implemented now
-// void opendnnSoftmaxForward (opendnnTensor, const Dtype*, OpenTensor, Dtype*);
+// void opendnnSoftmaxForward (opendnnTensor, const float*, OpenTensor, float*);
 
 // InnerProduct (FC)
 // TODO: There are no InnerProduct methods in cuDNN but with OpenDNN?
@@ -155,19 +151,17 @@ void opendnnGetNormDescriptor (opendnnNormDescriptor_t, int*, double*, double*, 
 
 // Actual computation methods
 void opendnnAddTensor (opendnnHandle_t, opendnnTensorDescriptor_t,
-                       const Dtype*, opendnnTensorDescriptor_t, Dtype*);
+                       const float*, opendnnTensorDescriptor_t, float*);
 void opendnnConvolutionForward (opendnnHandle_t,
-                                opendnnTensorDescriptor_t, const Dtype*,
-                                opendnnFilterDescriptor_t, const Dtype*,
+                                opendnnTensorDescriptor_t, float*,
+                                opendnnFilterDescriptor_t, float*,
                                 opendnnConvolutionDescriptor_t,
-                                opendnnTensorDescriptor_t, Dtype*);
+                                opendnnTensorDescriptor_t, float*);
 void opendnnPoolingForward (opendnnHandle_t, opendnnPoolingDescriptor_t,
-                            opendnnTensorDescriptor_t, const Dtype*,
-                            opendnnTensorDescriptor_t, Dtype*);
+                            opendnnTensorDescriptor_t, const float*,
+                            opendnnTensorDescriptor_t, float*);
 void opendnnNormForward (opendnnHandle_t, opendnnNormDescriptor_t,
-                         opendnnTensorDescriptor_t, const Dtype*,
-                         opendnnTensorDescriptor_t, Dtype*);
-
-#endif // OPENDNN
+                         opendnnTensorDescriptor_t, const float*,
+                         opendnnTensorDescriptor_t, float*);
 
 #endif // OPEN_CNN_H_

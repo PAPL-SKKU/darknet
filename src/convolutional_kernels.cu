@@ -110,12 +110,12 @@ void forward_convolutional_layer_gpu(convolutional_layer l, network net)
                 l.srcTensorDesc,
                 net.input_gpu,
                 l.weightDesc,
-                l.weights,
+                l.weights_gpu,
                 l.convDesc,
                 l.dstTensorDesc,
                 l.output_gpu);
     timer.Stop();
-    printf("%lf\n", timer.MilliSeconds());
+    printf("Here is Time: %lf\n", timer.MilliSeconds());
 #else
     int i, j;
     int m = l.n/l.groups;
