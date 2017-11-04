@@ -3,13 +3,15 @@
 #include <iomanip>
 #include <limits>
 
-
+#include "NumberADT/NumberADT.hpp"
+#include "timer.hpp"
 
 extern "C"{
 #include "opendnn.h"
 }
 #include "opendnn_kernel.cuh"
 
+#include <string>
 #include <sstream>
 #include <fstream>
 #include <iterator>
@@ -19,6 +21,7 @@ using namespace std;
 
 
 void opendnnCreate (opendnnHandle_t* handle) {
+    Number::ParseConfigs("config.txt");
     *handle = new opendnnContext;
 }
 
@@ -134,11 +137,21 @@ void im2col_gpu(const float* data_im, const int channels,
       width_col, data_col);
 }
 
+namespace util
+{
+    template < typename T > std::string to_string( const T& n )
+    {
+        std::ostringstream stm ;
+        stm << n ;
+        return stm.str() ;
+    }
+}
+
 void opendnnConvolutionForward (opendnnHandle_t handle,
   opendnnTensorDescriptor_t bottom_desc, float* bottom,
   opendnnFilterDescriptor_t filter_desc, float* filter,
   opendnnConvolutionDescriptor_t conv_desc,
-  opendnnTensorDescriptor_t top_desc, float* top) {
+  opendnnTensorDescriptor_t top_desc, float* top, int idx) {
     int bot_n, bot_c, bot_h, bot_w, bot_nst, bot_cst, bot_hst, bot_wst;
     int top_n, top_c, top_h, top_w, top_nst, top_cst, top_hst, top_wst;
     int pad_h, pad_w, str_h, str_w, ups_x, ups_y;
@@ -186,7 +199,23 @@ void opendnnConvolutionForward (opendnnHandle_t handle,
         const int weight_offset = fil_out_*fil_in_*fil_h*fil_w;
         const int col_offset = bot_c_*fil_h*fil_w*top_h*top_w;
         const int output_offset = top_c_*top_h*top_w;
-        float *A = filter + weight_offset * g;
+
+        // Number:: Conversion from native type to NumberADT ===============
+        int total = fil_out_ * fil_in_ * fil_h * fil_w;
+        Number* f_buf = new Number[total];
+        Number::TypeInfo* config = Number::cfg[util::to_string(idx)];
+
+        for (int i = 0; i < total; i++) {
+            f_buf[i].init(config->get_type(), config->get_bwTotal(), config->get_bwInt());
+            f_buf[i] = (filter + weight_offset * g)[i];
+        }
+        // Number:: Memory allocation ======================================
+        Number* f_gpu;
+        cudaMalloc(&f_gpu, sizeof(Number)*total);
+        cudaMemcpy(f_gpu, f_buf, sizeof(Number)*total, cudaMemcpyHostToDevice);
+        // =================================================================
+
+        Number *A = f_gpu; // Number::
         float *B = col_in_batch + col_offset * g;
         float *C = output + output_offset * g;
 
@@ -194,6 +223,11 @@ void opendnnConvolutionForward (opendnnHandle_t handle,
         dim3 grid((N+BLOCK_SIZE-1)/BLOCK_SIZE, (M+BLOCK_SIZE-1)/BLOCK_SIZE, N_BATCH);
         dim3 block(BLOCK_SIZE, BLOCK_SIZE);
         matmul_block_lin_shared_batch<<<grid,block>>>(A,B,C,M,K,K,N,M,N,group);
+
+        // Number:: Release memory =========================================
+        cudaFree(f_gpu);
+        delete [] f_buf;
+        // =================================================================
     }
 
     cudaFree(col_buf);

@@ -156,7 +156,7 @@ void opendnnConvolutionForward (opendnnHandle_t,
                                 opendnnTensorDescriptor_t, float*,
                                 opendnnFilterDescriptor_t, float*,
                                 opendnnConvolutionDescriptor_t,
-                                opendnnTensorDescriptor_t, float*);
+                                opendnnTensorDescriptor_t, float*, int);
 void opendnnPoolingForward (opendnnHandle_t, opendnnPoolingDescriptor_t,
                             opendnnTensorDescriptor_t, const float*,
                             opendnnTensorDescriptor_t, float*);
