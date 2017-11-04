@@ -11,7 +11,7 @@ wget https://pjreddie.com/media/files/yolo-voc.weights
 wget https://pjreddie.com/media/files/tiny-yolo-voc.weights
 
 mkdir -p ~/ssd 
-scp -r $HOST~/VOCdevkit ~/ssd/
+scp -r $HOST~/ssd/VOCdevkit ~/ssd/
 ln -s ~/ssd/VOCdevkit ./data/
 
 
