@@ -58,6 +58,9 @@ public:
       _bwInt = bwInt;
     }
     friend class Number;
+    DataType get_type(){return _type;}
+    int get_bwTotal(){return _bwTotal;}
+    int get_bwInt(){return _bwInt;}
   private:
     DataType _type;
     int _bwTotal;
