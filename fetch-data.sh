@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# HOST=
-HOST=arc-titan:
+HOST=
+# HOST=arc-titan:
 # HOST=arc-titan@147.46.125.108:
 DARKNET_DIR=$HOST~/darknet-gemm
 REMOTE=0
@@ -21,8 +21,6 @@ ln -s ~/ssd/VOCdevkit ./data/
 scp -r $DARKNET_DIR/data/labelled ./data/
 
 # Download darknet refernce (28 MB)
-wget https://github.com/pjreddie/darknet/blob/master/cfg/tiny.cfg
-mv darknet.cfg cfg/
 wget http://pjreddie.com/media/files/darknet.weights
 
 
