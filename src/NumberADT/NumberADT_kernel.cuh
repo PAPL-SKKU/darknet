@@ -85,6 +85,10 @@ CUDA_HOSTDEV float Number::operator*(float rhs) {
   }
 }
 
+void Number::operator=(double rhs){
+    buf = (float)rhs;
+}
+
 void Number::operator=(float rhs){
     buf = rhs;
 }

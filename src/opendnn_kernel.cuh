@@ -100,7 +100,7 @@ __global__ void matmul_block(float* A, float* B, float* C,
 
 
 // Blocked (Tiled) & linearized shared memory
-__global__ void matmul_block_lin_shared(float* A, float* B, float* C,
+__global__ void matmul_block_lin_shared(Number* A, float* B, float* C,
                              int ARows, int ACols, int BRows,
                              int BCols, int CRows, int CCols)
 {
@@ -109,25 +109,25 @@ __global__ void matmul_block_lin_shared(float* A, float* B, float* C,
     int Row = blockIdx.y*BLOCK_SIZE + threadIdx.y;
     int Col = blockIdx.x*BLOCK_SIZE + threadIdx.x;
 
-    __shared__ float As[BLOCK_SIZE*BLOCK_SIZE];
-    __shared__ float Bs[BLOCK_SIZE*BLOCK_SIZE];
+    __shared__ Number As[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
 
     for (int k = 0; k < (BLOCK_SIZE + ACols - 1)/BLOCK_SIZE; k++) {
 
          if (k*BLOCK_SIZE + threadIdx.x < ACols && Row < ARows)
-             As[threadIdx.y*BLOCK_SIZE+threadIdx.x] = A[Row*ACols + k*BLOCK_SIZE + threadIdx.x];
+             As[threadIdx.y][threadIdx.x] = A[Row*ACols + k*BLOCK_SIZE + threadIdx.x];
          else
-             As[threadIdx.y*BLOCK_SIZE+threadIdx.x] = 0.0;
+             As[threadIdx.y][threadIdx.x] = 0.0;
 
          if (k*BLOCK_SIZE + threadIdx.y < BRows && Col < BCols)
-             Bs[threadIdx.y*BLOCK_SIZE+threadIdx.x] = B[(k*BLOCK_SIZE + threadIdx.y)*BCols + Col];
+             Bs[threadIdx.y][threadIdx.x] = B[(k*BLOCK_SIZE + threadIdx.y)*BCols + Col];
          else
-             Bs[threadIdx.y*BLOCK_SIZE+threadIdx.x] = 0.0;
+             Bs[threadIdx.y][threadIdx.x] = 0.0f;
 
          __syncthreads();
 
          for (int n = 0; n < BLOCK_SIZE; ++n)
-             CValue += As[threadIdx.y*BLOCK_SIZE+n] * Bs[n*BLOCK_SIZE+threadIdx.x];
+             CValue += As[threadIdx.y][n] * Bs[n][threadIdx.x];
 
          __syncthreads();
     }
@@ -150,25 +150,25 @@ __global__ void matmul_block_lin_shared_batch(Number* A, float* B, float* C,
     int Row = blockIdx.y*BLOCK_SIZE + threadIdx.y;
     int Col = blockIdx.x*BLOCK_SIZE + threadIdx.x;
 
-    __shared__ Number As[BLOCK_SIZE*BLOCK_SIZE];
-    __shared__ float Bs[BLOCK_SIZE*BLOCK_SIZE];
+    __shared__ Number As[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
 
     for (int k = 0; k < (BLOCK_SIZE + ACols - 1)/BLOCK_SIZE; k++) {
 
         if (k*BLOCK_SIZE + threadIdx.x < ACols && Row < ARows)
-            As[threadIdx.y*BLOCK_SIZE+threadIdx.x] = A[Row*ACols + k*BLOCK_SIZE + threadIdx.x];
+            As[threadIdx.y][threadIdx.x] = A[Row*ACols + k*BLOCK_SIZE + threadIdx.x];
         else
-            As[threadIdx.y*BLOCK_SIZE+threadIdx.x] = 0.0f;
+            As[threadIdx.y][threadIdx.x] = 0.0f;
 
         if (k*BLOCK_SIZE + threadIdx.y < BRows && Col < BCols)
-            Bs[threadIdx.y*BLOCK_SIZE+threadIdx.x] = B[blockIdx.z*BCols*BRows*group + (k*BLOCK_SIZE + threadIdx.y)*BCols + Col];
+            Bs[threadIdx.y][threadIdx.x] = B[blockIdx.z*BCols*BRows*group + (k*BLOCK_SIZE + threadIdx.y)*BCols + Col];
         else
-            Bs[threadIdx.y*BLOCK_SIZE+threadIdx.x] = 0.0f;
+            Bs[threadIdx.y][threadIdx.x] = 0.0f;
 
         __syncthreads();
 
         for (int n = 0; n < BLOCK_SIZE; ++n)
-            CValue += As[threadIdx.y*BLOCK_SIZE + n] * Bs[n*BLOCK_SIZE+threadIdx.x];
+            CValue += As[threadIdx.y][n] * Bs[n][threadIdx.x];
 
         __syncthreads();
     }

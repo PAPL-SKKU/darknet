@@ -203,10 +203,10 @@ void opendnnConvolutionForward (opendnnHandle_t handle,
         // Number:: Conversion from native type to NumberADT ===============
         int total = fil_out_ * fil_in_ * fil_h * fil_w;
         Number* f_buf = new Number[total];
-        Number::TypeInfo* config = Number::cfg[util::to_string(idx)];
+        Number::TypeInfo config = Number::cfg[util::to_string(idx)];
 
         for (int i = 0; i < total; i++) {
-            f_buf[i].init(config->get_type(), config->get_bwTotal(), config->get_bwInt());
+            f_buf[i].init(config.get_type(), config.get_bwTotal(), config.get_bwInt());
             f_buf[i] = (filter + weight_offset * g)[i];
         }
         // Number:: Memory allocation ======================================
