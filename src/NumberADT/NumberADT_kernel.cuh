@@ -1,5 +1,6 @@
 // Copied from NumberADT/NumberADT.cu
 // ===================================================================
+#include <stdio.h>
 
 CUDA_HOSTDEV float mul_float(float lhs, float rhs){
     return lhs * rhs;
@@ -11,82 +12,38 @@ CUDA_HOSTDEV float mul_half(float lhs, float rhs){
     return temp * rhs;
 }
 
-
-template <unsigned int BW>
-CUDA_HOSTDEV float mul_exp(float lhs, float rhs_native){
-    log2quant<BW> temp;
+CUDA_HOSTDEV float mul_exp(float lhs, float rhs_native, int BW){
+    log2quant temp(BW);
     temp = lhs;
     return temp * rhs_native;
 }
 
-template <unsigned int BW>
-CUDA_HOSTDEV float mul_fixed(float lhs, float rhs){
-    fixedp<BW, __MAX_IW__> temp;
+CUDA_HOSTDEV float mul_fixed(float lhs, float rhs, int BW, int IW){
+    fixedp temp(BW, IW);
     temp = lhs;
     return temp * rhs;
 }
 
 CUDA_HOSTDEV float Number::operator*(float rhs) {
+  float ret;
   switch (_type){
-    case EXP:
-        if (_bwTotal == 1) return mul_exp<1>(buf, rhs);
-        else if (_bwTotal == 2) return mul_exp<2>(buf, rhs);
-        else if (_bwTotal == 3) return mul_exp<3>(buf, rhs);
-        else if (_bwTotal == 4) return mul_exp<4>(buf, rhs);
-        else if (_bwTotal == 5) return mul_exp<5>(buf, rhs);
-        else if (_bwTotal == 6) return mul_exp<6>(buf, rhs);
-        else if (_bwTotal == 7) return mul_exp<7>(buf, rhs);
-        else if (_bwTotal == 8) return mul_exp<8>(buf, rhs);
-        else if (_bwTotal == 9) return mul_exp<9>(buf, rhs);
-        else if (_bwTotal == 16) return mul_exp<16>(buf, rhs);
+    case LOG2:
+        ret = mul_exp(buf, rhs, _bwTotal);
+        break;
     case FIXED: 
-      if (_bwTotal == 1) return mul_fixed<1>(buf, rhs);
-      else if (_bwTotal == 2) return mul_fixed<2>(buf, rhs);
-      else if (_bwTotal == 3) return mul_fixed<3>(buf, rhs);
-      else if (_bwTotal == 4) return mul_fixed<4>(buf, rhs);
-      else if (_bwTotal == 5) return mul_fixed<5>(buf, rhs);
-      else if (_bwTotal == 6) return mul_fixed<6>(buf, rhs);
-      else if (_bwTotal == 7) return mul_fixed<7>(buf, rhs);
-      else if (_bwTotal == 8) return mul_fixed<8>(buf, rhs);
-      else if (_bwTotal == 9) return mul_fixed<9>(buf, rhs);
-      else if (_bwTotal == 10) return mul_fixed<10>(buf, rhs);
-      else if (_bwTotal == 11) return mul_fixed<11>(buf, rhs);
-      else if (_bwTotal == 12) return mul_fixed<12>(buf, rhs);
-      else if (_bwTotal == 13) return mul_fixed<13>(buf, rhs);
-      else if (_bwTotal == 14) return mul_fixed<14>(buf, rhs);
-      else if (_bwTotal == 15) return mul_fixed<15>(buf, rhs);
-      else if (_bwTotal == 16) return mul_fixed<16>(buf, rhs);
-      else if (_bwTotal == 17) return mul_fixed<17>(buf, rhs);
-      else if (_bwTotal == 18) return mul_fixed<18>(buf, rhs);
-      else if (_bwTotal == 19) return mul_fixed<19>(buf, rhs);
-      else if (_bwTotal == 20) return mul_fixed<20>(buf, rhs);
-      else if (_bwTotal == 21) return mul_fixed<21>(buf, rhs);
-      else if (_bwTotal == 22) return mul_fixed<22>(buf, rhs);
-      else if (_bwTotal == 23) return mul_fixed<23>(buf, rhs);
-      else if (_bwTotal == 24) return mul_fixed<24>(buf, rhs);
-      else if (_bwTotal == 25) return mul_fixed<25>(buf, rhs);
-      else if (_bwTotal == 26) return mul_fixed<26>(buf, rhs);
-      else if (_bwTotal == 27) return mul_fixed<27>(buf, rhs);
-      else if (_bwTotal == 28) return mul_fixed<28>(buf, rhs);
-      else if (_bwTotal == 29) return mul_fixed<29>(buf, rhs);
-      else if (_bwTotal == 30) return mul_fixed<30>(buf, rhs);
-      else if (_bwTotal == 31) return mul_fixed<31>(buf, rhs);
-      else if (_bwTotal == 32) return mul_fixed<32>(buf, rhs);
-      else{
-        // LOG(ERROR) << "Number::operator*(), Not a valid bitwidth "
-        //            << __RED__ << _bwTotal << __END__;
-        exit(-1);
-      }
-    case FLOAT: return mul_float(buf, rhs);
-    case HALF: return mul_half(buf, rhs);
+        ret = mul_fixed(buf, rhs, _bwTotal, 0);
+        break;
+    case FLOAT: 
+        ret = mul_float(buf, rhs); 
+        break;
+    case HALF:  
+        ret = mul_half(buf, rhs); 
+        break;
     default:
-//       LOG(ERROR) << "Number::operator*(), Invalid type for lhs";
+      printf("Number::operator*(float), invalid type");
       exit(-1);
   }
-}
-
-void Number::operator=(double rhs){
-    buf = (float)rhs;
+  return ret;
 }
 
 void Number::operator=(float rhs){
@@ -99,4 +56,51 @@ CUDA_HOSTDEV void Number::operator=(const Number& rhs){
     _bwTotal = rhs._bwTotal;
     _bwInt = rhs._bwInt;
     buf = rhs.buf;
+}
+
+CUDA_HOSTDEV const float fixedp::operator*(const float rhs) const {
+    float lhs = (1-2*_sign)*(float)_data / exp2f((float)_total);
+    return lhs * rhs;
+}
+
+CUDA_HOSTDEV void fixedp::operator=(float rhs) {
+    unsigned int temp = *reinterpret_cast<unsigned int*>(&rhs);
+    _sign = temp >> 31 & 0x1;
+    _data = lroundf(rhs*exp2f((float)_mentissa)) << (_total - _mentissa);
+    if (_sign) _data = ~_data + 1;
+}
+
+CUDA_HOSTDEV void fixedp::operator=(double rhs) {
+    unsigned long temp = *reinterpret_cast<unsigned long*>(&rhs);
+    _sign = temp >> 63 & 0x1;
+    _data = lroundf(rhs*exp2f((float)_mentissa)) << (_total - _mentissa);
+    if (_sign) _data = ~_data + 1;
+}
+
+CUDA_HOSTDEV void fixedp::operator=(const int rhs) {
+    _sign = (rhs >> 31) & 0x1;
+    _data = lroundf(rhs*exp2f((float)_mentissa)) << (_total - _mentissa);
+    if (_sign) _data = ~_data + 1;
+}
+
+CUDA_HOSTDEV float log2quant::operator*(float a) const {
+    if (!a) return 0;
+    int temp = (_data - (1<<_size-2) + 128) << 23;
+    float lhs = *reinterpret_cast<float*>(&temp);
+    return lhs * a * (1 - 2*_sign);
+}
+
+CUDA_HOSTDEV void log2quant::operator=(float a) {
+    unsigned int temp = *reinterpret_cast<unsigned int*>(&a);
+    short limit = (1 << (_size-1)) - 1;
+    _data = ((temp << 1) >> 24) - 128 + (1 << (_size-2));
+    if (_data > limit) _data = limit;
+    if (_data < 0) _data = 0;
+    _sign = (temp >> 31) & 0x1;
+}
+
+CUDA_HOSTDEV float log2quant::getResult() {
+    int temp = (_data - (1<<_size-2) + 128) << 23;
+    float result = (1 - 2 * _sign) * (*reinterpret_cast<float*>(&temp));
+    return result;
 }

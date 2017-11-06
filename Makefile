@@ -88,11 +88,11 @@ $(ALIB): $(OBJS)
 $(SLIB): $(OBJS)
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
+$(OBJDIR)NumberADT.o: NumberADT/NumberADT.cpp NumberADT/NumberADT_kernel.cuh $(DEPS)
+	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
+
 $(OBJDIR)%.o: %.c $(DEPS)
 	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@
-
-$(OBJDIR)NumberADT.o: NumberADT/NumberADT.cpp $(DEPS)
-	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
 
 $(OBJDIR)%.o: %.cu $(DEPS)
 	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@

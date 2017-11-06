@@ -9,10 +9,9 @@
 #define CUDA_HOSTDEV
 #endif
 
-template <int T, int I>
 class fixedp {
 public:
-    CUDA_HOSTDEV fixedp (): _total (T), _integer (I), _mentissa(T-I) {}
+    CUDA_HOSTDEV fixedp(int bw, int iw) { _total = bw; _integer = iw; _mentissa = bw - iw; }
     CUDA_HOSTDEV unsigned long long getData() {return _data;}
     CUDA_HOSTDEV int getTotal() {return _total;}
     CUDA_HOSTDEV bool getSign() {return _sign;}
@@ -27,40 +26,5 @@ private:
     bool _sign;
     unsigned long long _data;
 };
-
-template <int T, int I>
-CUDA_HOSTDEV const float fixedp<T, I>::operator*(const float rhs) const {
-    float lhs = (1-2*_sign)*(float)_data / exp2f((float)_total);
-    return lhs * rhs;
-}
-
-template <int T, int I>
-CUDA_HOSTDEV void fixedp<T, I>::operator=(float rhs) {
-    unsigned int temp = *reinterpret_cast<unsigned int*>(&rhs);
-    _sign = temp >> 31 & 0x1;
-    _data = lroundf(rhs*exp2f((float)_mentissa)) << (_total - _mentissa);
-    if (_sign) _data = ~_data + 1;
-}
-
-template <int T, int I>
-CUDA_HOSTDEV void fixedp<T, I>::operator=(double rhs) {
-    unsigned long temp = *reinterpret_cast<unsigned long*>(&rhs);
-    _sign = temp >> 63 & 0x1;
-    _data = lroundf(rhs*exp2f((float)_mentissa)) << (_total - _mentissa);
-    if (_sign) _data = ~_data + 1;
-}
-
-template <int T, int I>
-CUDA_HOSTDEV void fixedp<T, I>::operator=(const int rhs) {
-    _sign = (rhs >> 31) & 0x1;
-    _data = lroundf(rhs*exp2f((float)_mentissa)) << (_total - _mentissa);
-    if (_sign) _data = ~_data + 1;
-}
-
-template <int T, int I>
-std::ostream& operator<<(std::ostream& os, fixedp<T, I>& fp) {
-    os << fp.getData(); 
-    return os;
-}
 
 #endif

@@ -21,7 +21,7 @@ using namespace std;
 
 
 enum DataType {
-  EXP,
+  LOG2,
   FIXED,
   FLOAT,
   HALF
@@ -57,10 +57,10 @@ public:
       _bwTotal = bwTotal;
       _bwInt = bwInt;
     }
-    friend class Number;
     DataType get_type(){return _type;}
     int get_bwTotal(){return _bwTotal;}
     int get_bwInt(){return _bwInt;}
+    friend class Number;
   private:
     DataType _type;
     int _bwTotal;
@@ -83,6 +83,7 @@ public:
   bool is(DataType type){if (type == _type) true; else false;}
 
 private:
+  // Static buffer
   float buf;
 
   // Type info 

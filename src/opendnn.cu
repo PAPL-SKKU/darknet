@@ -2,12 +2,13 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include "timer.hpp"
 
 #include "NumberADT/NumberADT.hpp"
-#include "timer.hpp"
 
 extern "C"{
 #include "opendnn.h"
+// #include "cuda.h"
 }
 #include "opendnn_kernel.cuh"
 
@@ -147,11 +148,12 @@ namespace util
     }
 }
 
+// int idx = 0;
 void opendnnConvolutionForward (opendnnHandle_t handle,
   opendnnTensorDescriptor_t bottom_desc, float* bottom,
   opendnnFilterDescriptor_t filter_desc, float* filter,
   opendnnConvolutionDescriptor_t conv_desc,
-  opendnnTensorDescriptor_t top_desc, float* top, int idx) {
+  opendnnTensorDescriptor_t top_desc, float* top, int lnum) {
     int bot_n, bot_c, bot_h, bot_w, bot_nst, bot_cst, bot_hst, bot_wst;
     int top_n, top_c, top_h, top_w, top_nst, top_cst, top_hst, top_wst;
     int pad_h, pad_w, str_h, str_w, ups_x, ups_y;
@@ -171,16 +173,20 @@ void opendnnConvolutionForward (opendnnHandle_t handle,
     cudaMalloc((void**)&col_buf, sizeof(float)*col_cnt);
 
     // Explicitly form column matrix thourgh im2col
-    for (int n = 0; n < bot_n; ++n) {
-        float* input = bottom + n*bot_nst;
-        float* col_in_batch = col_buf + n*col_cnt_in_batch;
-        cudaMemset(col_in_batch, 0, sizeof(float)*col_cnt_in_batch);
+    /* if (fil_h != 1){ */
+        for (int n = 0; n < bot_n; ++n) {
+            float* input = bottom + n*bot_nst;
+            float* col_in_batch = col_buf + n*col_cnt_in_batch;
+            cudaMemset(col_in_batch, 0, sizeof(float)*col_cnt_in_batch);
 
-        im2col_gpu((float*)input,
-            bot_c, bot_w, bot_h, fil_h, fil_w,
-            pad_h, pad_w, str_h, str_w,
-            1, 1, (float*)col_in_batch);
-    }
+            im2col_gpu((float*)input,
+                bot_c, bot_w, bot_h, fil_h, fil_w,
+                pad_h, pad_w, str_h, str_w,
+                1, 1, (float*)col_in_batch);
+        }
+    /* } else { */
+    /*   col_buf = bottom; */
+    /* } */
 
     int fil_out_ = fil_out / group;
     int fil_in_  = fil_in / group;
@@ -201,20 +207,46 @@ void opendnnConvolutionForward (opendnnHandle_t handle,
         const int output_offset = top_c_*top_h*top_w;
 
         // Number:: Conversion from native type to NumberADT ===============
+#ifdef DBG
+        Timer timer;
+        timer.Start();
+#endif
         int total = fil_out_ * fil_in_ * fil_h * fil_w;
         Number* f_buf = new Number[total];
-        Number::TypeInfo config = Number::cfg[util::to_string(idx)];
+
+        if (!Number::cfg.count(util::to_string(lnum))) {
+          std::cout << lnum << endl;
+          exit(-1);
+        }
+        Number::TypeInfo config = Number::cfg[util::to_string(lnum)];
 
         for (int i = 0; i < total; i++) {
+            // f_buf[i].set(util::to_string(lnum));
+            // f_buf[i].set(config);
             f_buf[i].init(config.get_type(), config.get_bwTotal(), config.get_bwInt());
             f_buf[i] = (filter + weight_offset * g)[i];
         }
+#ifdef DBG
+        timer.Stop();
+        std::cout << "--Total filter size " << total << endl;
+        std::cout << "--Init exec time: " << timer.MilliSeconds() << endl;
+#endif 
         // Number:: Memory allocation ======================================
         Number* f_gpu;
-        cudaMalloc(&f_gpu, sizeof(Number)*total);
+        // printf("size of Number: %ld, size of f_gpu: %ld\n", sizeof(Number), sizeof(Number)*total);
+        // printf("size of float: %ld, size of (float*)f_gpu: %ld\n", sizeof(float), sizeof(float)*total);
+        // timer.Start();
+        // cudaError_t status = cudaMalloc((void**)&f_gpu, sizeof(Number)*total);
+        // check_error(status);
+        cudaMalloc((void**)&f_gpu, sizeof(Number)*total);
         cudaMemcpy(f_gpu, f_buf, sizeof(Number)*total, cudaMemcpyHostToDevice);
+        // timer.Stop();
+        // std::cout << "part 2 total: " << timer.MilliSeconds() << endl;
         // =================================================================
 
+#ifdef DBG
+        timer.Start();
+#endif
         Number *A = f_gpu; // Number::
         float *B = col_in_batch + col_offset * g;
         float *C = output + output_offset * g;
@@ -223,6 +255,10 @@ void opendnnConvolutionForward (opendnnHandle_t handle,
         dim3 grid((N+BLOCK_SIZE-1)/BLOCK_SIZE, (M+BLOCK_SIZE-1)/BLOCK_SIZE, N_BATCH);
         dim3 block(BLOCK_SIZE, BLOCK_SIZE);
         matmul_block_lin_shared_batch<<<grid,block>>>(A,B,C,M,K,K,N,M,N,group);
+#ifdef DBG
+        timer.Stop();
+        std::cout<< "--Kernel exec time " << timer.MilliSeconds() << endl;
+#endif
 
         // Number:: Release memory =========================================
         cudaFree(f_gpu);
@@ -231,6 +267,7 @@ void opendnnConvolutionForward (opendnnHandle_t handle,
     }
 
     cudaFree(col_buf);
+    // idx++;
 
     DEBUG(bottom);
     DEBUG(top);

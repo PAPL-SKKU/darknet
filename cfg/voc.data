@@ -1,5 +1,5 @@
 classes= 20
-train  = /home/arc-titan/darknet-gemm/data/train.txt
-valid  = /home/arc-titan/darknet-gemm/data/2007_test.txt
+train  = data/2007_train.txt
+valid  = data/2007_test.txt
 names = data/voc.names
 backup = backup

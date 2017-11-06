@@ -23,6 +23,7 @@ Number::Number(string name) {
 
 void Number::set(string name) {
     if (!cfg.count(name)){
+        std::cout << name << endl;
         exit(-1);
     }
     TypeInfo config = cfg[name];
@@ -80,7 +81,7 @@ DataType atot(string type){
     } else if(type == "FIXED"){
         return FIXED;
     } else if(type == "EXP"){
-        return EXP;
+        return LOG2;
     } else {
         cerr << "ERROR" << endl;
         exit(-1);
@@ -125,175 +126,15 @@ void Number::ParseConfigs(string filename){
 
 // Getter for arbitrary bitwidth of exp
 float Number::get_exp(){
-    if (_bwTotal == 2) {
-        log2quant<2> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 3) {
-        log2quant<3> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 4) {
-        log2quant<4> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 5) {
-        log2quant<5> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 6) {
-        log2quant<6> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 7) {
-        log2quant<7> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 8) {
-        log2quant<8> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 9) {
-        log2quant<9> temp;
-        temp = buf;
-        return temp.getResult();
-    } else if (_bwTotal == 16) {
-        log2quant<16> temp;
-        temp = buf;
-        return temp.getResult();
-    }
+    log2quant temp(_bwTotal);
+    temp = buf;
+    return temp.getResult();
 }
 
 float Number::get_fixed() {
-    if (_bwTotal == 1) {
-        fixedp<1,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 2) {
-        fixedp<2,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 3) {
-        fixedp<3,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 4) {
-        fixedp<4,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 5) {
-        fixedp<5,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 6) {
-        fixedp<6,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 7) {
-        fixedp<7,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 8) {
-        fixedp<8,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 9) {
-        fixedp<9,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 10) {
-        fixedp<10,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 11) {
-        fixedp<11,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 12) {
-        fixedp<12,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 13) {
-        fixedp<13,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 14) {
-        fixedp<14,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 15) {
-        fixedp<15,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 16) {
-        fixedp<16,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 17) {
-        fixedp<17,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 18) {
-        fixedp<18,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 19) {
-        fixedp<19,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 20) {
-        fixedp<20,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 21) {
-        fixedp<21,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 22) {
-        fixedp<22,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 23) {
-        fixedp<23,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 24) {
-        fixedp<24,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 25) {
-        fixedp<25,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 26) {
-        fixedp<26,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 27) {
-        fixedp<27,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 28) {
-        fixedp<28,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 29) {
-        fixedp<29,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 30) {
-        fixedp<30,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else if (_bwTotal == 31) {
-        fixedp<31,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    } else {
-        fixedp<32,__MAX_IW__> temp;
-        temp = buf;
-        return (1 - 2*temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
-    }
+    fixedp temp(_bwTotal, __MAX_IW__);
+    temp = buf;
+    return (1 - temp.getSign()) * (float)temp.getData() / exp2f(temp.getTotal());
 }
 
 float Number::get_half() {
@@ -305,7 +146,7 @@ float Number::get_half() {
 // Overloading << for cout of Number
 ostream& operator<<(ostream& os, Number& num) {
   switch (num.get_type()){
-    case EXP  : os << num.get_exp(); break;
+    case LOG2: os << num.get_exp(); break;
     case FIXED: os << num.get_fixed(); break;
     case FLOAT: os << num.get_float(); break;
     case HALF: os << num.get_half(); break;
