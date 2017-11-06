@@ -12,10 +12,13 @@ mkdir -p $result_path
 NTEST=-1
 NTEST=2000
 validation_list=./data/2007_test.txt
+test_list=test.txt
 if [ $NTEST != -1 ];then
   head $validation_list.template -n $NTEST > $validation_list
+  head ./data/$test_list.template -n $NTEST > ./data/VOCdevkit/VOC2007/ImageSets/Main/$test_list
 else
   cp $validation_list.template $validation_list
+  cp $test_list.template ./data/VOCdevkit/VOC2007/ImageSets/Main/$test_list
 fi
 
 ROOT=`pwd`
