@@ -58,7 +58,7 @@ def do_python_eval(devkit_path, year, image_set, classes, output_dir = 'results'
     aps = []
     # The PASCAL VOC metric changed in 2010
     use_07_metric = True if int(year) < 2010 else False
-    print 'VOC07 metric? ' + ('Yes' if use_07_metric else 'No')
+    # print 'VOC07 metric? ' + ('Yes' if use_07_metric else 'No')
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     for i, cls in enumerate(classes):
@@ -69,22 +69,23 @@ def do_python_eval(devkit_path, year, image_set, classes, output_dir = 'results'
             filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
             use_07_metric=use_07_metric)
         aps += [ap]
-        print('AP for {} = {:.4f}'.format(cls, ap))
+        # print('AP for {} = {:.4f}'.format(cls, ap))
         with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:
             cPickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
-    print('Mean AP = {:.4f}'.format(np.mean(aps)))
-    print('~~~~~~~~')
-    print('Results:')
-    for ap in aps:
-        print('{:.3f}'.format(ap))
-    print('{:.3f}'.format(np.mean(aps)))
-    print('~~~~~~~~')
-    print('')
-    print('--------------------------------------------------------------')
-    print('Results computed with the **unofficial** Python eval code.')
-    print('Results should be very close to the official MATLAB eval code.')
-    print('-- Thanks, The Management')
-    print('--------------------------------------------------------------')
+    print('{:.4f}'.format(np.mean(aps)))
+    # print('Mean AP = {:.4f}'.format(np.mean(aps)))
+    # print('~~~~~~~~')
+    # print('Results:')
+    # for ap in aps:
+    #     print('{:.3f}'.format(ap))
+    # print('{:.3f}'.format(np.mean(aps)))
+    # print('~~~~~~~~')
+    # print('')
+    # print('--------------------------------------------------------------')
+    # print('Results computed with the **unofficial** Python eval code.')
+    # print('Results should be very close to the official MATLAB eval code.')
+    # print('-- Thanks, The Management')
+    # print('--------------------------------------------------------------')
 
 
 
@@ -97,5 +98,5 @@ if __name__ == '__main__':
 
     classes = [t.strip('\n') for t in lines]
 
-    print 'Evaluating detections'
+    # print 'Evaluating detections'
     do_python_eval(args.voc_dir, args.year, args.image_set, classes, output_dir)
