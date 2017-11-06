@@ -1,3 +1,5 @@
+#/bin/bash
+
 result_path=./results # darknet default
 
 if [[ -d $result_path ]]
@@ -5,39 +7,35 @@ then
   rm -rf $result_path 
 fi
 
+mkdir -p $result_path
+
+NTEST=-1
 NTEST=2000
 validation_list=./data/2007_test.txt
-head $validation_list.template -n $NTEST > $validation_list
+if [ $NTEST != -1 ];then
+  head $validation_list.template -n $NTEST > $validation_list
+else
+  cp $validation_list.template $validation_list
+fi
 
 ROOT=`pwd`
 sed -i -E "s#(.*.JPEG)#${ROOT}\1#g" $validation_list
 
 
-# mkdir -p $result_path
+###############################################
+# YOLO2
 
-# def
-# (time ./darknet detector valid ./cfg/voc.data cfg/yolo-voc.cfg yolo-voc.weights -gpus 0) > $result_path/yolo-voc-2007.log 2>&1 &
-# pid=$!
-# tail -f $result_path/yolo-voc-2007.log
-# wait $pid
-# kill $pid
+# ./darknet detector valid ./cfg/voc.data cfg/yolo-voc.cfg yolo-voc.weights -gpus 0 2> $result_path/yolo.log > /dev/null
 #
 # rm ./data/VOCdevkit/annotation_cache -rf
-# python reval_voc.py $result_path > $result_path/mAP-def.log 2>&1
-# mv $result_path $result_path\_def.voc.2007.val
-
+# python reval_voc.py $result_path 2> /dev/null 1> mAP-yolo.log
+# sed -E "s@Mean AP = (0.d+)@\1@g" mAP-yolo.log
 
 ###############################################
+# Tiny-YOLO
 
-mkdir -p $result_path
+./darknet detector valid ./cfg/voc.data cfg/tiny-yolo-voc.cfg tiny-yolo-voc.weights -gpus 0 2> $result_path/tiny-yolo.log > /dev/null
 
-# tiny
-(time ./darknet detector valid ./cfg/voc.data cfg/tiny-yolo-voc.cfg tiny-yolo-voc.weights -gpus 0) > $result_path/tiny-yolo-voc-2007.log 2>&1 &
-pid=$!
-tail -f $result_path/tiny-yolo-voc-2007.log
-wait $pid
-kill $pid
-# 
 rm ./data/VOCdevkit/annotation_cache -rf
-python reval_voc.py $result_path > $result_path/mAP-tiny.log 2>&1
-mv $result_path $result_path\_tiny.voc.2007.val
+python reval_voc.py $result_path 2> /dev/null 1> mAP-tiny.log
+sed -E "s@Mean AP = (0.d+)@\1@g" mAP-tiny.log
