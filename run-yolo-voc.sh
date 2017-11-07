@@ -37,7 +37,7 @@ sed -i -E "s#(.*.JPEG)#${ROOT}\1#g" $validation_list
 ###############################################
 # Tiny-YOLO
 
-time ./darknet detector valid ./cfg/voc.data cfg/tiny-yolo-voc.cfg tiny-yolo-voc.weights -gpus 0 2> $result_path/tiny-yolo.log > /dev/null
+./darknet detector valid ./cfg/voc.data cfg/tiny-yolo-voc.cfg tiny-yolo-voc.weights -gpus 0 2> $result_path/tiny-yolo.log > /dev/null
 
 rm ./data/VOCdevkit/annotation_cache -rf
 python reval_voc.py $result_path 2> /dev/null | tee mAP-tiny.log
