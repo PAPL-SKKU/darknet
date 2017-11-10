@@ -152,7 +152,6 @@ __global__ void matmul_block_lin_shared_batch(float* A, float* B, float* C,
     __shared__ float Bs[BLOCK_SIZE*BLOCK_SIZE];
 
     for (int k = 0; k < (BLOCK_SIZE + ACols - 1)/BLOCK_SIZE; k++) {
-
         if (k*BLOCK_SIZE + threadIdx.x < ACols && Row < ARows)
             As[threadIdx.y*BLOCK_SIZE+threadIdx.x] = A[Row*ACols + k*BLOCK_SIZE + threadIdx.x];
         else
