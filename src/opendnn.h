@@ -152,7 +152,6 @@ void opendnnGetNormDescriptor (opendnnNormDescriptor_t, int*, double*, double*, 
 // Actual computation methods
 void opendnnAddTensor (opendnnHandle_t, opendnnTensorDescriptor_t,
                        const float*, opendnnTensorDescriptor_t, float*);
-// jang
 void opendnnConvolutionForward (opendnnHandle_t,
                                 opendnnTensorDescriptor_t, float*,
                                 opendnnFilterDescriptor_t, float*,

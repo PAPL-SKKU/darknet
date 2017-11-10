@@ -1,5 +1,4 @@
 #include "NumberADT/NumberADT_kernel.cuh"
-#include "timer.hpp"
 
 const int BLOCK_SIZE = 32;
 
@@ -168,8 +167,6 @@ __global__ void matmul_block_lin_shared_batch(Number* A, float* B, float* C,
         __syncthreads();
 
         for (int n = 0; n < BLOCK_SIZE; ++n)
-            // if (k*BLOCK_SIZE + n < ACols && Row < ARows)
-            //   CValue += A[Row*ACols + k*BLOCK_SIZE + n] * Bs[n*BLOCK_SIZE+threadIdx.x];
             CValue += As[threadIdx.y*BLOCK_SIZE+n] * Bs[n*BLOCK_SIZE+threadIdx.x];
 
         __syncthreads();

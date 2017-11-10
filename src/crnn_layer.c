@@ -214,7 +214,6 @@ void forward_crnn_layer_gpu(layer l, network net)
     fill_gpu(l.hidden * l.batch * l.steps, 0, input_layer.delta_gpu, 1);
     if(net.train) fill_gpu(l.hidden * l.batch, 0, l.state_gpu, 1);
 
-    // printf("[dbg] layer steps: %d\n", l.steps);
     for (i = 0; i < l.steps; ++i) {
         s.input_gpu = net.input_gpu;
         forward_convolutional_layer_gpu(input_layer, s);
